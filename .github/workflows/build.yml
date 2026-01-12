@@ -59,7 +59,7 @@ jobs:
     strategy:
       matrix:
         os:
-          - ubuntu-latest
+          - ubuntu-22.04
           - windows-latest
           - macos-latest
         arch:
@@ -67,9 +67,9 @@ jobs:
         include:
           - os: macos-latest
             arch: arm64
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
             arch: arm64
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
             arch: arm
       fail-fast: false
 
@@ -93,7 +93,7 @@ jobs:
           pip install setuptools
 
       - name: Install cross-compilers for Linux ARM
-        if: matrix.os == 'ubuntu-latest' && (matrix.arch == 'arm' || matrix.arch == 'arm64')
+        if: matrix.os == 'ubuntu-22.04' && (matrix.arch == 'arm' || matrix.arch == 'arm64')
         run: |
           sudo apt-get update
           sudo apt-get install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf libc6-dev-armel-cross libc6-dev-armhf-cross          
@@ -105,12 +105,12 @@ jobs:
       - name: Configure build for Unix
         if: matrix.os != 'windows-latest'
         run: |
-          if [ "${{ matrix.os }}" == "ubuntu-latest" ] && [ "${{ matrix.arch }}" == "arm" ]; then
+          if [ "${{ matrix.os }}" == "ubuntu-22.04" ] && [ "${{ matrix.arch }}" == "arm" ]; then
             export CC=arm-linux-gnueabihf-gcc
             export CXX=arm-linux-gnueabihf-g++
             export LINK=arm-linux-gnueabihf-g++
             npm run configure -- --arch=arm
-          elif [ "${{ matrix.os }}" == "ubuntu-latest" ] && [ "${{ matrix.arch }}" == "arm64" ]; then
+          elif [ "${{ matrix.os }}" == "ubuntu-22.04" ] && [ "${{ matrix.arch }}" == "arm64" ]; then
             export CC=aarch64-linux-gnu-gcc
             export CXX=aarch64-linux-gnu-g++
             export LINK=aarch64-linux-gnu-g++
@@ -135,11 +135,11 @@ jobs:
             echo "output_dir=macos_x64" >> $GITHUB_OUTPUT
           elif [ "${{ matrix.os }}" == "macos-latest" ] && [ "${{ matrix.arch }}" == "arm64" ]; then
             echo "output_dir=macos_arm64" >> $GITHUB_OUTPUT
-          elif [ "${{ matrix.os }}" == "ubuntu-latest" ] && [ "${{ matrix.arch }}" == "x64" ]; then
+          elif [ "${{ matrix.os }}" == "ubuntu-22.04" ] && [ "${{ matrix.arch }}" == "x64" ]; then
             echo "output_dir=linux_x64" >> $GITHUB_OUTPUT
-          elif [ "${{ matrix.os }}" == "ubuntu-latest" ] && [ "${{ matrix.arch }}" == "arm64" ]; then
+          elif [ "${{ matrix.os }}" == "ubuntu-22.04" ] && [ "${{ matrix.arch }}" == "arm64" ]; then
             echo "output_dir=linux_arm64" >> $GITHUB_OUTPUT
-          elif [ "${{ matrix.os }}" == "ubuntu-latest" ] && [ "${{ matrix.arch }}" == "arm" ]; then
+          elif [ "${{ matrix.os }}" == "ubuntu-22.04" ] && [ "${{ matrix.arch }}" == "arm" ]; then
             echo "output_dir=linux_arm" >> $GITHUB_OUTPUT
           fi
         shell: bash
@@ -154,14 +154,14 @@ jobs:
         shell: pwsh
 
       - name: Check library format for ARM
-        if: matrix.os == 'ubuntu-latest' && matrix.arch == 'arm'
+        if: matrix.os == 'ubuntu-22.04' && matrix.arch == 'arm'
         run: |
           file lib/build/lib60870_linux_arm.a
           readelf -h lib/build/lib60870_linux_arm.a || true
         shell: bash
 
       - name: Check library format for ARM64
-        if: matrix.os == 'ubuntu-latest' && matrix.arch == 'arm64'
+        if: matrix.os == 'ubuntu-22.04' && matrix.arch == 'arm64'
         run: |
           file lib/build/lib60870_linux_arm64.a
           readelf -h lib/build/lib60870_linux_arm64.a || true
@@ -172,12 +172,12 @@ jobs:
         run: |
           if [ "${{ matrix.os }}" == "macos-latest" ] && [ "${{ matrix.arch }}" == "x64" ]; then
             arch -x86_64 npm run prebuild -- --arch x64 --macos-min-version=11.0
-          elif [ "${{ matrix.os }}" == "ubuntu-latest" ] && [ "${{ matrix.arch }}" == "arm" ]; then
+          elif [ "${{ matrix.os }}" == "ubuntu-22.04" ] && [ "${{ matrix.arch }}" == "arm" ]; then
             export CC=arm-linux-gnueabihf-gcc
             export CXX=arm-linux-gnueabihf-g++
             export LINK=arm-linux-gnueabihf-g++
             npm run prebuild -- --arch arm --cflags="-march=armv7-a -mfpu=vfp -mfloat-abi=hard"
-          elif [ "${{ matrix.os }}" == "ubuntu-latest" ] && [ "${{ matrix.arch }}" == "arm64" ]; then
+          elif [ "${{ matrix.os }}" == "ubuntu-22.04" ] && [ "${{ matrix.arch }}" == "arm64" ]; then
             export CC=aarch64-linux-gnu-gcc
             export CXX=aarch64-linux-gnu-g++
             export LINK=aarch64-linux-gnu-g++
@@ -202,7 +202,7 @@ jobs:
         if: matrix.os != 'windows-latest'
         id: determine-platform-unix
         run: |
-          if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
+          if [ "${{ matrix.os }}" == "ubuntu-22.04" ]; then
             echo "platform=linux" >> $GITHUB_OUTPUT
           elif [ "${{ matrix.os }}" == "macos-latest" ]; then
             echo "platform=darwin" >> $GITHUB_OUTPUT
