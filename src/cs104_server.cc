@@ -462,7 +462,7 @@ Napi::Value IEC104Server::Disconnect(const Napi::CallbackInfo& info) {
             if (id == clientIdStr) {
                 // Gracefully close the connection
                 IMasterConnection_close(conn);
-                node.warn(`Disconnected client: ${clientIdStr}`);
+                printf("Disconnected client: %s\n", clientIdStr.c_str());
                 break;
             }
         }
