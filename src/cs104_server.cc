@@ -27,6 +27,7 @@ Napi::Object IEC104Server::Init(Napi::Env env, Napi::Object exports) {
     Napi::Function func = DefineClass(env, "IEC104Server", {
         InstanceMethod("start", &IEC104Server::Start),
         InstanceMethod("stop", &IEC104Server::Stop),
+        InstanceMethod("disconnect", &IEC104Server::Disconnect),
         InstanceMethod("sendCommands", &IEC104Server::SendCommands),
         InstanceMethod("getStatus", &IEC104Server::GetStatus)
     });
@@ -390,13 +391,28 @@ void IEC104Server::ConnectionEventHandler(void* parameter, IMasterConnection con
 
 Napi::Value IEC104Server::Stop(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();
+    
+    // Step 1: Close all active client connections gracefully
+    {
+        std::lock_guard<std::mutex> lock(connMutex);
+        for (const auto& [conn, id] : clientConnections) {
+            try {
+                IMasterConnection_close(conn);
+            } catch (...) {
+                // Ignore errors during graceful disconnect
+            }
+        }
+    }
+    
+    // Step 2: Give clients time to disconnect (100ms should be sufficient)
+    Thread_sleep(100);
+    
+    // Step 3: Now stop and destroy the server
     {
         std::lock_guard<std::mutex> lock(connMutex);
         if (running) {
             running = false;
             if (started && server) {
-               // printf("Stop called, stopping server, serverID: %s\n", serverID.c_str());
-                fflush(stdout);
                 CS104_Slave_stop(server);
                 CS104_Slave_destroy(server);
                 server = nullptr;
@@ -425,6 +441,33 @@ Napi::Value IEC104Server::Stop(const Napi::CallbackInfo& info) {
         ipConnectionCounts.clear();
     }
 
+    return env.Undefined();
+}
+
+Napi::Value IEC104Server::Disconnect(const Napi::CallbackInfo& info) {
+    Napi::Env env = info.Env();
+    
+    if (info.Length() < 1 || !info[0].IsString()) {
+        Napi::TypeError::New(env, "Expected clientId (string)").ThrowAsJavaScriptException();
+        return env.Undefined();
+    }
+
+    std::string clientIdStr = info[0].As<Napi::String>().Utf8Value();
+    
+    {
+        std::lock_guard<std::mutex> lock(connMutex);
+        
+        // Find and close the specific client connection
+        for (const auto& [conn, id] : clientConnections) {
+            if (id == clientIdStr) {
+                // Gracefully close the connection
+                IMasterConnection_close(conn);
+                node.warn(`Disconnected client: ${clientIdStr}`);
+                break;
+            }
+        }
+    }
+    
     return env.Undefined();
 }
 

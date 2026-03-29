@@ -54,6 +54,7 @@ private:
     Napi::Value Stop(const Napi::CallbackInfo& info);
     Napi::Value SendCommands(const Napi::CallbackInfo& info);
     Napi::Value GetStatus(const Napi::CallbackInfo& info);
+    Napi::Value Disconnect(const Napi::CallbackInfo& info);
 };
 
 #endif // CS104_SERVER_H
