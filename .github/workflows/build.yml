@@ -56,7 +56,6 @@ jobs:
   build-and-upload:
     needs: create-release
     runs-on: ${{ matrix.os }}
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     strategy:
       matrix:
         os:
@@ -236,7 +235,6 @@ jobs:
   update-builds-and-publish:
     needs: build-and-upload
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
