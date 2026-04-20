@@ -56,6 +56,7 @@ jobs:
   build-and-upload:
     needs: create-release
     runs-on: ${{ matrix.os }}
+    if: always() && (needs.create-release.result == 'success' || needs.create-release.result == 'skipped')
     strategy:
       matrix:
         os:
@@ -235,6 +236,7 @@ jobs:
   update-builds-and-publish:
     needs: build-and-upload
     runs-on: ubuntu-latest
+    if: always() && needs.build-and-upload.result != 'failure' && needs.build-and-upload.result != 'cancelled'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
