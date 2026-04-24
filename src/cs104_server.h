@@ -7,6 +7,9 @@
 #include <mutex>
 #include <vector>
 #include <map>
+#include <unordered_map>
+#include <queue>
+#include <condition_variable>
 
 extern "C" {
 #include "cs104_slave.h"
@@ -14,15 +17,64 @@ extern "C" {
 #include "hal_time.h"
 }
 
+// Структура для идентификации ожидаемой команды
+struct PendingCommandKey {
+    std::string clientId;
+    int ioa;
+    int typeId;
+    int asduAddress;
 
+    bool operator==(const PendingCommandKey& other) const {
+        return clientId == other.clientId && ioa == other.ioa &&
+               typeId == other.typeId && asduAddress == other.asduAddress;
+    }
+};
+
+// Хеш для использования в unordered_map
+namespace std {
+    template<>
+    struct hash<PendingCommandKey> {
+        size_t operator()(const PendingCommandKey& k) const {
+            return hash<string>()(k.clientId) ^ (hash<int>()(k.ioa) << 1) ^
+                   (hash<int>()(k.typeId) << 2) ^ (hash<int>()(k.asduAddress) << 3);
+        }
+    };
+}
 
 class IEC104Server : public Napi::ObjectWrap<IEC104Server> {
 public:
     static Napi::Object Init(Napi::Env env, Napi::Object exports);
     IEC104Server(const Napi::CallbackInfo& info);
     virtual ~IEC104Server();
+    Napi::Value SendCommandAsync(const Napi::CallbackInfo& info);
 
 private:
+    // Структура для хранения Deferred и таймера
+    struct PendingCommand {
+        Napi::Promise::Deferred deferred;
+        std::unique_ptr<std::thread> timerThread;
+        std::atomic<bool> resolved{false};
+        std::mutex mtx;
+        std::condition_variable cv;
+        uint64_t timeoutMs;
+
+        explicit PendingCommand(Napi::Env env) 
+            : deferred(Napi::Promise::Deferred::New(env)), timeoutMs(0) {}
+
+        // Запрещаем копирование, разрешаем перемещение
+        PendingCommand(const PendingCommand&) = delete;
+        PendingCommand& operator=(const PendingCommand&) = delete;
+        PendingCommand(PendingCommand&&) = default;
+        PendingCommand& operator=(PendingCommand&&) = default;
+    };
+
+    std::unordered_map<PendingCommandKey, std::shared_ptr<PendingCommand>> pendingCommands;
+    std::mutex pendingMutex;
+
+    // Вспомогательные методы
+    void resolvePendingCommand(const PendingCommandKey& key, bool success, const std::string& errorMsg = "");
+    void startTimeoutTimer(const PendingCommandKey& key, std::shared_ptr<PendingCommand> pending, uint64_t timeoutMs);
+
     static Napi::FunctionReference constructor;
 
     
