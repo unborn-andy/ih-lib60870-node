@@ -4,6 +4,7 @@
   "description": "Cross-platform Node.js native addon of the iec60870 support",
   "main": "index.js",
   "scripts": {
+    "install": "node -e \"process.exit(0)\"",
     "configure": "node-gyp configure",
     "build": "node-gyp build",
     "prebuild": "prebuild --target=20.19.0 --napi-versions 11",
